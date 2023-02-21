@@ -19,7 +19,7 @@ def wantcardsuser (cardinventoryuser):
     mycursor = db.cursor()
 
     cardoutputname = cardnamecheckername(f'{cardinventoryuser}')
-    newwantquery = (f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname, d.name AS uname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid WHERE i.name="{cardoutputname}"')
+    newwantquery = (f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname, d.name AS uname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid WHERE i.name="{cardoutputname}" GROUP BY i.discordid, i.name, d.name')
     mycursor.execute(newwantquery)
     for (usid,count,magicname, uname) in mycursor:
         return ("<@!{}> has {} {}".format(usid, count, magicname))

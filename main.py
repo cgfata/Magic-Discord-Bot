@@ -155,6 +155,34 @@ TABLES['cards'] = (
     "`watermark` text"
     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
 
+TABLES['inventory'] = (
+"CREATE TABLE `inventory` ("
+  "`id` int NOT NULL AUTO_INCREMENT,"
+  "`count` int DEFAULT NULL,"
+  "`name` varchar(255) NOT NULL,"
+  "`edition` varchar(255) NOT NULL,"
+  "`cardnumber` int NOT NULL,"
+  "`foil` varchar(4) DEFAULT NULL,"
+  "`discordid` varchar(255) DEFAULT NULL,"
+  "PRIMARY KEY (`id`),"
+  "KEY `discordid_idx` (`discordid`),"
+  "CONSTRAINT `discordid` FOREIGN KEY (`discordid`) REFERENCES `discorduser` (`discordid`)"
+") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+)
+
+TABLES['user'] = (
+"CREATE TABLE `user` ("
+  "`id` int NOT NULL AUTO_INCREMENT,"
+  "`email` varchar(150) DEFAULT NULL,"
+  "`password` varchar(150) DEFAULT NULL,"
+  "`first_name` varchar(150) DEFAULT NULL,"
+  "`discordid` varchar(255) DEFAULT NULL,"
+  "PRIMARY KEY (`id`),"
+  "UNIQUE KEY `email` (`email`),"
+  "UNIQUE KEY `discordid` (`discordid`)"
+") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+)
+
 
 def create_database(mycursor):
     try:
