@@ -3,7 +3,7 @@ import discord
 import os
 from discord.ext import commands
 from dotenv import load_dotenv
-from functions import wantcardsuser, cardnamechecker, cardnamecheckername,cardinfo
+from functions import wantcardsuser, cardnamechecker, cardnamecheckername,cardinfo, emojimana
 
 load_dotenv()
 BOT_TOKEN = os.getenv('TOKEN')
@@ -54,6 +54,8 @@ class scry(commands.Cog):
                     cardsideurl = "front"
             mycursor.execute(infoquery)
             for (name, manaCost, type, text, power, toughness, scryfallId, loyalty, side) in mycursor:
+                emoji_cost = emojimana(ctx,manaCost)
+                emoji_text = emojimana(ctx,text)
                 firstletterforurl = scryfallId[0]
                 secondletterforurl = scryfallId[1]
                 scryfallURL = f'https://c1.scryfall.com/file/scryfall-cards/large/{cardsideurl}/{firstletterforurl}/{secondletterforurl}/{scryfallId}.jpg'
@@ -66,15 +68,15 @@ class scry(commands.Cog):
                             title=f'{name}',
                         )
                         embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
+                        embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                         embed.set_thumbnail(url=f'{scryfallURL}')
                         await ctx.send(embed=embed)
                     elif "None" in str(power):
                         embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
+                            title=f'{name}          {emoji_cost}',
                         )
                         embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
+                        embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                         embed.set_thumbnail(url=f'{scryfallURL}')
                         await ctx.send(embed=embed)
                     elif "None" in str(manaCost):
@@ -82,16 +84,16 @@ class scry(commands.Cog):
                             title=f'{name}',
                         )
                         embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
+                        embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                         embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
                         embed.set_thumbnail(url=f'{scryfallURL}')
                         await ctx.send(embed=embed)
                     else:
                         embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
+                            title=f'{name}          {emoji_cost}',
                         )
                         embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
+                        embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                         embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
                         embed.set_thumbnail(url=f'{scryfallURL}')
                         await ctx.send(embed=embed)
@@ -100,16 +102,16 @@ class scry(commands.Cog):
                         title=f'{name}',
                     )
                     embed.add_field(name='Type', value=f'{type}', inline=False)
-                    embed.add_field(name="Text", value=f'{text}', inline=False)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                     embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
                     embed.set_thumbnail(url=f'{scryfallURL}')
                     await ctx.send(embed=embed)
                 else:
                     embed = discord.Embed(
-                        title=f'{name}          {manaCost}',
+                        title=f'{name}          {emoji_cost}',
                     )
                     embed.add_field(name='Type', value=f'{type}', inline=False)
-                    embed.add_field(name="Text", value=f'{text}', inline=False)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                     embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
                     embed.set_thumbnail(url=f'{scryfallURL}')
                     await ctx.send(embed=embed)
@@ -119,131 +121,73 @@ class scry(commands.Cog):
     async def topdeck(self, ctx):
         # so Lorenz only gets the power 9!
         if ctx.author.id == 147917366620192768:
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
-            mycursor = db.cursor()
             randominfoquery = (
                 f'SELECT name, manaCost,type,text,power,toughness,scryfallId,loyalty FROM cards Where scryfallId is NOT NULL AND (name = "Ancestral Recall" OR name = "Black Lotus" OR name = "Mox Emerald" OR name = "Mox Jet" OR name = "Mox Pearl" OR name = "Mox Ruby" OR name = "Mox Sapphire" OR name = "Timetwister" OR name = "Time Walk") ORDER BY RAND() LIMIT 1')
-            mycursor.execute(randominfoquery)
-            for (name, manaCost, type, text, power, toughness, scryfallId, loyalty) in mycursor:
-                firstletterforurl = scryfallId[0]
-                secondletterforurl = scryfallId[1]
-                scryfallURL = f'https://c1.scryfall.com/file/scryfall-cards/large/front/{firstletterforurl}/{secondletterforurl}/{scryfallId}.jpg'
-                # The if statements check check to see plans walker formatt only loyalty, if creature do stats, if spell remove stats, and if no manacost leave manacost blank
-                if "None" in str(loyalty):
-                    if "None" in str(manaCost) and "None" in str(power):
-                        embed = discord.Embed(
-                            title=f'{name}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(power):
-                        embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(manaCost):
-                        embed = discord.Embed(
-                            title=f'{name}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(name):
-                        await ctx.send(
-                            "The card does not have a picture in the database." + "\n\n" + cardinfo(f'{name}'))
-                    else:
-                        embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                else:
-                    embed = discord.Embed(
-                        title=f'{name}          {manaCost}',
-                    )
-                    embed.add_field(name='Type', value=f'{type}', inline=False)
-                    embed.add_field(name="Text", value=f'{text}', inline=False)
-                    embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
-                    embed.set_thumbnail(url=f'{scryfallURL}')
-                    await ctx.send(embed=embed)
-                mycursor.close()
+
         else:
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
-            mycursor = db.cursor()
             randominfoquery = (
                 f'SELECT name, manaCost,type,text,power,toughness,scryfallId,loyalty FROM cards Where scryfallId is NOT NUll ORDER BY RAND() LIMIT 1')
-            mycursor.execute(randominfoquery)
-            for (name, manaCost, type, text, power, toughness, scryfallId, loyalty) in mycursor:
-                firstletterforurl = scryfallId[0]
-                secondletterforurl = scryfallId[1]
-                scryfallURL = f'https://c1.scryfall.com/file/scryfall-cards/large/front/{firstletterforurl}/{secondletterforurl}/{scryfallId}.jpg'
-                if "None" in str(loyalty):
-                    if "None" in str(manaCost) and "None" in str(power):
-                        embed = discord.Embed(
-                            title=f'{name}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(power):
-                        embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(manaCost):
-                        embed = discord.Embed(
-                            title=f'{name}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                    elif "None" in str(name):
-                        await ctx.send("The card does not have a picture. Use command $text for the card")
-                    else:
-                        embed = discord.Embed(
-                            title=f'{name}          {manaCost}',
-                        )
-                        embed.add_field(name='Type', value=f'{type}', inline=False)
-                        embed.add_field(name="Text", value=f'{text}', inline=False)
-                        embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
-                        embed.set_thumbnail(url=f'{scryfallURL}')
-                        await ctx.send(embed=embed)
-                else:
+        db = mysql.connector.connect(
+            host=MAGIC_INVENTORY_HOST,
+            user=MAGIC_INVENTORY_USER,
+            passwd=MAGIC_INVENTORY_PASSWORD,
+            database=MAGIC_INVENTORY_DATABASE
+        )
+        mycursor = db.cursor()
+        mycursor.execute(randominfoquery)
+        for (name, manaCost, type, text, power, toughness, scryfallId, loyalty) in mycursor:
+            emoji_cost = emojimana(ctx, manaCost)
+            emoji_text = emojimana(ctx, text)
+            firstletterforurl = scryfallId[0]
+            secondletterforurl = scryfallId[1]
+            scryfallURL = f'https://c1.scryfall.com/file/scryfall-cards/large/front/{firstletterforurl}/{secondletterforurl}/{scryfallId}.jpg'
+            if "None" in str(loyalty):
+                if "None" in str(manaCost) and "None" in str(power):
                     embed = discord.Embed(
-                        title=f'{name}          {manaCost}',
+                        title=f'{name}',
                     )
                     embed.add_field(name='Type', value=f'{type}', inline=False)
-                    embed.add_field(name="Text", value=f'{text}', inline=False)
-                    embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
                     embed.set_thumbnail(url=f'{scryfallURL}')
                     await ctx.send(embed=embed)
-            mycursor.close()
+                elif "None" in str(power):
+                    embed = discord.Embed(
+                        title=f'{name}          {emoji_cost }',
+                    )
+                    embed.add_field(name='Type', value=f'{type}', inline=False)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                    embed.set_thumbnail(url=f'{scryfallURL}')
+                    await ctx.send(embed=embed)
+                elif "None" in str(manaCost):
+                    embed = discord.Embed(
+                        title=f'{name}',
+                    )
+                    embed.add_field(name='Type', value=f'{type}', inline=False)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                    embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
+                    embed.set_thumbnail(url=f'{scryfallURL}')
+                    await ctx.send(embed=embed)
+                elif "None" in str(name):
+                    await ctx.send("The card does not have a picture. Use command $text for the card")
+                else:
+                    embed = discord.Embed(
+                        title=f'{name}          {emoji_cost}',
+                    )
+                    embed.add_field(name='Type', value=f'{type}', inline=False)
+                    embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                    embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
+                    embed.set_thumbnail(url=f'{scryfallURL}')
+                    await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(
+                    title=f'{name}          {emoji_cost }',
+                )
+                embed.add_field(name='Type', value=f'{type}', inline=False)
+                embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
+                embed.set_thumbnail(url=f'{scryfallURL}')
+                await ctx.send(embed=embed)
+        mycursor.close()
 
 async def setup(client):
     await client.add_cog(scry(client))
