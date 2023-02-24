@@ -1,5 +1,8 @@
 import mysql.connector
 import os
+import zipfile
+import requests
+import pandas as pd
 import discord
 from dotenv import load_dotenv
 
@@ -141,36 +144,87 @@ def emojimana(ctx, text):
         text = text.replace(placeholder, str(emoji))
     return text
 
+async def send_card_embed(ctx,query):
+    from database import db, mycursor
+    mycursor.execute(query)
+    for (name, manaCost, type, text, power, toughness, scryfallId, loyalty, side) in mycursor:
+        if "b" in str(side):
+            cardsideurl = "back"
+        else:
+            cardsideurl = "front"
+        if "None" in str(manaCost):
+            emoji_text = emojimana(ctx, text)
+        else:
+            emoji_cost = emojimana(ctx, manaCost)
+            emoji_text = emojimana(ctx, text)
+        firstletterforurl = scryfallId[0]
+        secondletterforurl = scryfallId[1]
+        scryfallURL = f'https://c1.scryfall.com/file/scryfall-cards/large/{cardsideurl}/{firstletterforurl}/{secondletterforurl}/{scryfallId}.jpg'
+        if "None" in str(loyalty):
+            if "None" in str(manaCost) and "None" in str(power):
+                embed = discord.Embed(
+                    title=f'{name}',
+                )
+                embed.add_field(name='Type', value=f'{type}', inline=False)
+                embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                embed.set_thumbnail(url=f'{scryfallURL}')
+                return(ctx.send(embed=embed))
+            elif "None" in str(power):
+                embed = discord.Embed(
+                    title=f'{name}          {emoji_cost }',
+                )
+                embed.add_field(name='Type', value=f'{type}', inline=False)
+                embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                embed.set_thumbnail(url=f'{scryfallURL}')
+                return(ctx.send(embed=embed))
+            elif "None" in str(manaCost):
+                embed = discord.Embed(
+                    title=f'{name}',
+                )
+                embed.add_field(name='Type', value=f'{type}', inline=False)
+                embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
+                embed.set_thumbnail(url=f'{scryfallURL}')
+                return(ctx.send(embed=embed))
+            elif "None" in str(name):
+                return (ctx.send("The card does not have a picture. Use command $text for the card"))
+            else:
+                embed = discord.Embed(
+                    title=f'{name}          {emoji_cost}',
+                )
+                embed.add_field(name='Type', value=f'{type}', inline=False)
+                embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+                embed.add_field(name="Stats", value=f'{power}/{toughness}', inline=True)
+                embed.set_thumbnail(url=f'{scryfallURL}')
+                return(ctx.send(embed=embed))
+        else:
+            embed = discord.Embed(
+                title=f'{name}          {emoji_cost }',
+            )
+            embed.add_field(name='Type', value=f'{type}', inline=False)
+            embed.add_field(name="Text", value=f'{emoji_text}', inline=False)
+            embed.add_field(name="Loyalty", value=f'{loyalty}', inline=True)
+            embed.set_thumbnail(url=f'{scryfallURL}')
+            return(ctx.send(embed=embed))
+    mycursor.close()
+    db.close()
 
-def wantcardsuser (cardinventoryuser):
-    db = mysql.connector.connect(
-        host=MAGIC_INVENTORY_HOST,
-        user=MAGIC_INVENTORY_USER,
-        passwd=MAGIC_INVENTORY_PASSWORD,
-        database=MAGIC_INVENTORY_DATABASE
-    )
-    mycursor = db.cursor()
+async def wantcardsuser (card):
+    from database import mycursor,db
 
-    cardoutputname = cardnamecheckername(f'{cardinventoryuser}')
-    newwantquery = (f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname, d.name AS uname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid WHERE i.name="{cardoutputname}" GROUP BY i.discordid, i.name, d.name')
+    newwantquery = (f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname, d.name AS uname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid WHERE i.name="{card}" GROUP BY i.discordid, i.name, d.name')
     mycursor.execute(newwantquery)
     for (usid,count,magicname, uname) in mycursor:
         return ("<@!{}> has {} {}".format(usid, count, magicname))
     mycursor.close()
+    db.close()
 
+async def cardnamechecker (card):
+    from database import mycursor, db
 
-def cardnamechecker (cardbeingchecked):
-    db = mysql.connector.connect(
-        host=MAGIC_INVENTORY_HOST,
-        user=MAGIC_INVENTORY_USER,
-        passwd=MAGIC_INVENTORY_PASSWORD,
-        database=MAGIC_INVENTORY_DATABASE
-    )
-    mycursor = db.cursor()
-
-    checkerquery = (f'SELECT name,uuid FROM cards WHERE name="{cardbeingchecked}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
-    checkerquerydoublefacefront = (f'SELECT name, uuid FROM cards WHERE name LIKE "{cardbeingchecked} //%" AND side= "a" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
-    checkerquerydoublefaceback = (f'SELECT name, uuid FROM cards WHERE name LIKE "%// {cardbeingchecked}" AND side= "b" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+    checkerquery = (f'SELECT name,uuid FROM cards WHERE name="{card}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+    checkerquerydoublefacefront = (f'SELECT name, uuid FROM cards WHERE name LIKE "{card} //%" AND side= "a" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+    checkerquerydoublefaceback = (f'SELECT name, uuid FROM cards WHERE name LIKE "%// {card}" AND side= "b" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
     mycursor.execute(checkerquery)
     for (name,uuid) in mycursor:
         return (str(uuid))
@@ -181,22 +235,17 @@ def cardnamechecker (cardbeingchecked):
     for (name,uuid) in mycursor:
         return (str(uuid))
     mycursor.close()
+    db.close()
 
-def cardnamecheckername(cardbeingchecked):
-    db = mysql.connector.connect(
-        host=MAGIC_INVENTORY_HOST,
-        user=MAGIC_INVENTORY_USER,
-        passwd=MAGIC_INVENTORY_PASSWORD,
-        database=MAGIC_INVENTORY_DATABASE
-    )
-    mycursor = db.cursor()
+async def cardnamecheckername(card):
+    from database import mycursor, db
 
     checkerquery = (
-        f'SELECT name,uuid FROM cards WHERE name="{cardbeingchecked}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+        f'SELECT name,uuid FROM cards WHERE name="{card}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
     checkerquerydoublefacefront = (
-        f'SELECT name, uuid FROM cards WHERE name LIKE "{cardbeingchecked} //%" AND side= "a" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+        f'SELECT name, uuid FROM cards WHERE name LIKE "{card} //%" AND side= "a" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
     checkerquerydoublefaceback = (
-        f'SELECT name, uuid FROM cards WHERE name LIKE "%// {cardbeingchecked}" AND side= "b" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
+        f'SELECT name, uuid FROM cards WHERE name LIKE "%// {card}" AND side= "b" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
     mycursor.execute(checkerquery)
     for (name, uuid) in mycursor:
         return (str(name))
@@ -207,21 +256,14 @@ def cardnamecheckername(cardbeingchecked):
     for (name, uuid) in mycursor:
         return (str(name))
     mycursor.close()
-
+    db.close()
 
 ##This def will pull out Card Name, Manacost, Type, Text, And power and toughness.
 ##If no Manacost it will leave that out in the return
 ##If no power it will leave that out in the return
 ##if both power and manacost are not there then it will not return either
-def cardinfo (info):
-    db = mysql.connector.connect(
-        host=MAGIC_INVENTORY_HOST,
-        user=MAGIC_INVENTORY_USER,
-        passwd=MAGIC_INVENTORY_PASSWORD,
-        database=MAGIC_INVENTORY_DATABASE
-    )
-    mycursor = db.cursor()
-
+async def cardinfo (info):
+    from database import mycursor, db
     infoquery = (f'SELECT distinct name,manaCost,type,text,power,toughness,loyalty FROM cards WHERE uuid="{info}"')
     mycursor.execute(infoquery)
     for (name, manaCost, type, text,power,toughness,loyalty) in mycursor:
@@ -237,3 +279,35 @@ def cardinfo (info):
         else:
             return ("{} {}\n\n{}\n\n{}\n\nLoyalty: {}".format(name,manaCost,type,text,loyalty))
     mycursor.close()
+    db.close()
+
+async def updatecarddatabase():
+    from database import engine
+    # Will download the CSV from mtgjson to import cards that are missing
+    print('Script has started and starting to download the file')
+
+    downloadurl = 'https://mtgjson.com/api/v5/csv/cards.csv.zip'
+
+    req = requests.get(downloadurl)
+
+    filename = req.url[downloadurl.rfind('/') + 1:]
+    unzfilename = filename[:-4]
+
+    with open(filename, 'wb') as f:
+        for chunk in req.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+        print("File has been Downloaded")
+
+    with zipfile.ZipFile(filename, 'r') as filename:
+        filename.extract(unzfilename)
+        print("File has been unzipped")
+
+    csvdf = pd.read_csv(unzfilename, header=0, index_col=False, low_memory=False, delimiter=',')
+
+    with engine.begin() as connection:
+        sqldf = pd.read_sql_table('cards', con=connection)
+        dftoinsert = pd.concat([csvdf, sqldf]).drop_duplicates(subset=['id'], keep=False)
+        print("Reading Database to check dublicates")
+        dftoinsert.to_sql("cards", con=connection, if_exists='append', index=False)
+        print("Inserted Cards")

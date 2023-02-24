@@ -53,7 +53,7 @@ class userinfo(commands.Cog):
     async def updateat(self, ctx, *, at):
         if "}" in str(at) or "{" in str(at):
             await ctx.send("Hey stop that!")
-        elif "on" in str(at) or "On" in str(at) or "ON" in str(at):
+        elif "on" in str.lower(at):
             db = mysql.connector.connect(
                 host=MAGIC_INVENTORY_HOST,
                 user=MAGIC_INVENTORY_USER,
@@ -65,7 +65,7 @@ class userinfo(commands.Cog):
                 f'Update discordserver set at=1 WHERE discordid = {ctx.author.id} AND serverid = {ctx.guild.id}')
             db.commit()
             await ctx.send('You will now be @ when people are looking for cards')
-        elif "off" in str(at) or "Off" in str(at) or "OFF" in str(at):
+        elif "off" in str.lower(at):
             db = mysql.connector.connect(
                 host=MAGIC_INVENTORY_HOST,
                 user=MAGIC_INVENTORY_USER,

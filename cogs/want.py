@@ -5,7 +5,7 @@ import time
 import re
 from discord.ext import commands
 from dotenv import load_dotenv
-from functions import wantcardsuser, cardnamechecker, cardnamecheckername,cardinfo
+from functions import wantcardsuser, cardnamechecker, cardnamecheckername
 
 load_dotenv()
 BOT_TOKEN = os.getenv('TOKEN')
@@ -22,13 +22,13 @@ class want(commands.Cog):
 
     #commands
     @commands.command(brief='Will @ People who have the card and how many')
-    async def want(self, ctx, *, cardwanted):
-        await ctx.send(f'looking up the users who have {cardwanted}......')
-        if "}" in str(f'{cardwanted}') or "{" in str(f'{cardwanted}'):
+    async def want(self, ctx, *, card):
+        await ctx.send(f'looking up the users who have {card}......')
+        if "}" in str(f'{card}') or "{" in str(f'{card}'):
             await ctx.send('Hey now. You stop that!')
-        elif "None" in str(cardnamechecker(f'{cardwanted}')):
+        elif "None" in str(await cardnamechecker(f'{card}')):
             await ctx.send('The card name is incorrect')
-        elif "None" in str(wantcardsuser(f'{cardwanted}')):
+        elif "None" in str(await wantcardsuser(f'{card}')):
             await ctx.send('No one has the card')
         else:
             db = mysql.connector.connect(
@@ -41,7 +41,7 @@ class want(commands.Cog):
             atcard = ""
             noatcard = ""
             guild = str(ctx.guild.id)
-            cardoutputname = cardnamecheckername(f'{cardwanted}')
+            cardoutputname = await cardnamecheckername(f'{card}')
             mycursor.execute(
                 f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid LEFT JOIN discordserver s ON i.discordid = s.discordid Where i.name = "{cardoutputname}" AND serverid = {guild} AND active = 1 AND at = 1 GROUP BY i.discordid')
             rows = mycursor.fetchall()
@@ -53,35 +53,36 @@ class want(commands.Cog):
             for (uname, count, magicname) in rows:
                 noatcard += ("{} has {} {}\n".format(uname, count, magicname))
             await ctx.send(
-                f'<@!{ctx.author.id}> here are the users who have the card {cardwanted}:\n\n{atcard + noatcard}')
+                f'<@!{ctx.author.id}> here are the users who have the card {card}:\n\n{atcard + noatcard}')
             mycursor.close()
+            db.close()
 
     @commands.command(brief='Wll look up a mass import of who has the cards. ')
-    async def masswant(self, ctx, *, cardwanted):
-        cardsplit = (re.split("\n+", cardwanted))
+    async def masswant(self, ctx, *, card):
+        cardsplit = (re.split("\n+", card))
         timeofsend = int(time.time())
         nonumber = ""
         lessthan10 = ""
         greaterthan10 = ""
         numbercheck = list(range(10))
         cardwantedlist = []
-        if "}" in str(f'{cardwanted}') or "{" in str(f'{cardwanted}'):
+        if "}" in str(f'{card}') or "{" in str(f'{card}'):
             await ctx.send('Please remove { or } from your list!')
         else:
             await ctx.send('looking up the users who have cards from the list......')
-            for x in cardsplit:
-                if x[0] not in str(numbercheck):
-                    nonumber += ('i.name = "{}" OR '.format(x))
-                    cardwantedlist.append('{}'.format(x))
-                elif x[0] == " ":
-                    nonumber += ('i.name = "{}" OR '.format(x))
-                    cardwantedlist.append('{}'.format(x))
-                elif int(x[0] + x[1]) < 10:
-                    lessthan10 += ('i.name = "{}" OR '.format(x[2:]))
-                    cardwantedlist.append('{}'.format(x[2:]))
+            for card in cardsplit:
+                if card[0] not in str(numbercheck):
+                    nonumber += ('i.name = "{}" OR '.format(card))
+                    cardwantedlist.append('{}'.format(card))
+                elif card[0] == " ":
+                    nonumber += ('i.name = "{}" OR '.format(card))
+                    cardwantedlist.append('{}'.format(card))
+                elif int(card[0] + card[1]) < 10:
+                    lessthan10 += ('i.name = "{}" OR '.format(card[2:]))
+                    cardwantedlist.append('{}'.format(card[2:]))
                 else:
-                    greaterthan10 += ('i.name = "{}" OR '.format(x[3:]))
-                    cardwantedlist.append('{}'.format(x[3:]))
+                    greaterthan10 += ('i.name = "{}" OR '.format(card[3:]))
+                    cardwantedlist.append('{}'.format(card[3:]))
                 whereintoquery = (nonumber + greaterthan10 + lessthan10)[:-3]
                 db = mysql.connector.connect(
                     host=MAGIC_INVENTORY_HOST,
@@ -117,15 +118,17 @@ class want(commands.Cog):
                         noatcard += "\n{}: \n".format(currentcard)
                     noatcard += ("{} has {} {}\n".format(uname, count, magicname))
                 cardlist = list(set(cardlist))
-                cardsnonehas = list(set(cardwantedlist).difference(cardlist))
-                cardsnonehaswrite = ""
-                for x in cardsnonehas:
-                    cardsnonehaswrite += ('\n{}:\nNo one has this card or the card name was missed spelled\n'.format(x))
+                cardlist_lower = [card.lower() for card in cardlist]
+                cardwantedlist_lower = [card.lower() for card in cardwantedlist]
+                cardsnonehas = list(set(cardwantedlist_lower).difference(cardlist_lower))
+                cardsnonehasmessege = ""
+                for card in cardsnonehas:
+                    cardsnonehasmessege += ('\n{}:\nNo one has this card or the card name was missed spelled\n'.format(card))
                 filename = f'{timeofsend}{ctx.author.id}.txt'
                 savepath = 'F:/Documents/Python Projects/MagicBot/Massexports'
                 filepath = os.path.join(savepath, filename)
                 with open(filepath, "w") as f:
-                    f.write(F'{noatcard}\n{60 * "-"}\n{cardsnonehaswrite}')
+                    f.write(F'{noatcard}\n{60 * "-"}\n{cardsnonehasmessege}')
                 file = discord.File(filepath)
                 flushdir(savepath)
         await ctx.send(file=file,
