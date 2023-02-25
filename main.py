@@ -2,13 +2,9 @@ import mysql.connector
 import discord
 import os
 import asyncio
-import zipfile
-import requests
-import pandas as pd
 from discord.ext import commands
 from dotenv import load_dotenv
-from mysql.connector import errorcode
-from sqlalchemy import create_engine
+from database import start_database,prompt_user_updatecards
 
 intents = discord.Intents.all()
 
@@ -30,225 +26,6 @@ db = mysql.connector.connect(
 )
 
 mycursor = db.cursor()
-
-# TABLES = {}
-#
-# TABLES['discorduser'] = (
-#     "CREATE TABLE `discorduser` ("
-#     "  `id` int NOT NULL AUTO_INCREMENT,"
-#     "  `discordid` varchar(255) NOT NULL,"
-#     "  `name` varchar(255) NOT NULL,"
-#     "  PRIMARY KEY (`id`),"
-#     "  UNIQUE KEY `discordid_UNIQUE` (`discordid`)"
-#     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
-#
-# TABLES['discordserver'] = (
-#     "CREATE TABLE `discordserver` ("
-#     "  `id` int NOT NULL AUTO_INCREMENT,"
-#     "  `discordid` varchar(255) NOT NULL,"
-#     "  `serverid` varchar(255) NOT NULL,"
-#     "  `active` int NOT NULL,"
-#     "  `at` int NOT NULL DEFAULT '0',"
-#     "  PRIMARY KEY (`id`),"
-#     "  KEY `usertoserver_idx` (`discordid`),"
-#     "  CONSTRAINT `usertoserver` FOREIGN KEY (`discordid`) REFERENCES `discorduser` (`discordid`)"
-#     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
-#
-# TABLES['cards'] = (
-#     "CREATE TABLE `cards` ("
-#     "  `index` bigint DEFAULT NULL,"
-#     "  `id` bigint DEFAULT NULL,"
-#     "  `artist` text,"
-#     "`asciiName` text,"
-#     "`attractionLights` double DEFAULT NULL,"
-#     "`availability` text,"
-#     "`boosterTypes` text,"
-#     "`borderColor` text,"
-#     "`cardKingdomEtchedId` double DEFAULT NULL,"
-#     "`cardKingdomFoilId` double DEFAULT NULL,"
-#     "`cardKingdomId` double DEFAULT NULL,"
-#     " `cardParts` text,"
-#     "`cardsphereId` double DEFAULT NULL,"
-#     "`colorIdentity` text,"
-#     "`colorIndicator` text,"
-#     "`colors` text,"
-#     "`convertedManaCost` double DEFAULT NULL,"
-#     "`duelDeck` text,"
-#     "`edhrecRank` double DEFAULT NULL,"
-#     "`edhrecSaltiness` double DEFAULT NULL,"
-#     "`faceConvertedManaCost` double DEFAULT NULL,"
-#     "`faceFlavorName` text,"
-#     "`faceManaValue` double DEFAULT NULL,"
-#     "`faceName` text,"
-#     "`finishes` text,"
-#     "`flavorName` text,"
-#     "`flavorText` text,"
-#     "`frameEffects` text,"
-#     "`frameVersion` text,"
-#     "`hand` double DEFAULT NULL,"
-#     "`hasAlternativeDeckLimit` bigint DEFAULT NULL,"
-#     "`hasContentWarning` bigint DEFAULT NULL,"
-#     "`hasFoil` bigint DEFAULT NULL,"
-#     "`hasNonFoil` bigint DEFAULT NULL,"
-#     "`isAlternative` bigint DEFAULT NULL,"
-#     "`isFullArt` bigint DEFAULT NULL,"
-#     "`isFunny` bigint DEFAULT NULL,"
-#     "`isOnlineOnly` bigint DEFAULT NULL,"
-#     "`isOversized` bigint DEFAULT NULL,"
-#     "`isPromo` bigint DEFAULT NULL,"
-#     "`isRebalanced` bigint DEFAULT NULL,"
-#     "`isReprint` bigint DEFAULT NULL,"
-#     "`isReserved` bigint DEFAULT NULL,"
-#     "`isStarter` bigint DEFAULT NULL,"
-#     "`isStorySpotlight` bigint DEFAULT NULL,"
-#     "`isTextless` bigint DEFAULT NULL,"
-#     "`isTimeshifted` bigint DEFAULT NULL,"
-#     "`keywords` text,"
-#     "`language` text,"
-#     "`layout` text,"
-#     "`leadershipSkills` text,"
-#     "`life` double DEFAULT NULL,"
-#     "`loyalty` text,"
-#     "`manaCost` text,"
-#     "`manaValue` double DEFAULT NULL,"
-#     "`mcmId` double DEFAULT NULL,"
-#     "`mcmMetaId` double DEFAULT NULL,"
-#     "`mtgArenaId` double DEFAULT NULL,"
-#     "`mtgjsonFoilVersionId` text,"
-#     "`mtgjsonNonFoilVersionId` text,"
-#     "`mtgjsonV4Id` text,"
-#     "`mtgoFoilId` double DEFAULT NULL,"
-#     "`mtgoId` double DEFAULT NULL,"
-#     "`multiverseId` double DEFAULT NULL,"
-#     "`name` text,"
-#     "`number` text,"
-#     "`originalPrintings` text,"
-#     "`originalReleaseDate` text,"
-#     "`originalText` text,"
-#     "`originalType` text,"
-#     "`otherFaceIds` text,"
-#     "`power` text,"
-#     "`printings` text,"
-#     "`promoTypes` text,"
-#     "`purchaseUrls` text,"
-#     "`rarity` text,"
-#     "`rebalancedPrintings` text,"
-#     "`relatedCards` text,"
-#     "`scryfallId` text,"
-#     "`scryfallIllustrationId` text,"
-#     "`scryfallOracleId` text,"
-#     "`securityStamp` text,"
-#     "`setCode` text,"
-#     "`side` text,"
-#     "`signature` text,"
-#     "`subsets` text,"
-#     "`subtypes` text,"
-#     "`supertypes` text,"
-#     "`tcgplayerEtchedProductId` double DEFAULT NULL,"
-#     "`tcgplayerProductId` double DEFAULT NULL,"
-#     "`text` text,"
-#     "`toughness` text,"
-#     "`type` text,"
-#     "`types` text,"
-#     "`uuid` text,"
-#     "`variations` text,"
-#     "`watermark` text"
-#     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
-#
-# TABLES['inventory'] = (
-# "CREATE TABLE `inventory` ("
-#   "`id` int NOT NULL AUTO_INCREMENT,"
-#   "`count` int DEFAULT NULL,"
-#   "`name` varchar(255) NOT NULL,"
-#   "`edition` varchar(255) NOT NULL,"
-#   "`cardnumber` int NOT NULL,"
-#   "`foil` varchar(4) DEFAULT NULL,"
-#   "`discordid` varchar(255) DEFAULT NULL,"
-#   "PRIMARY KEY (`id`),"
-#   "KEY `discordid_idx` (`discordid`),"
-#   "CONSTRAINT `discordid` FOREIGN KEY (`discordid`) REFERENCES `discorduser` (`discordid`)"
-# ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-# )
-#
-# TABLES['user'] = (
-# "CREATE TABLE `user` ("
-#   "`id` int NOT NULL AUTO_INCREMENT,"
-#   "`email` varchar(150) DEFAULT NULL,"
-#   "`password` varchar(150) DEFAULT NULL,"
-#   "`first_name` varchar(150) DEFAULT NULL,"
-#   "`discordid` varchar(255) DEFAULT NULL,"
-#   "PRIMARY KEY (`id`),"
-#   "UNIQUE KEY `email` (`email`),"
-#   "UNIQUE KEY `discordid` (`discordid`)"
-# ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-# )
-#
-#
-# def create_database(mycursor):
-#     try:
-#         mycursor.execute(
-#             "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format(MAGIC_INVENTORY_DATABASE))
-#     except mysql.connector.Error as err:
-#         print("Failed creating database: {}".format(err))
-#         exit(1)
-#
-#
-# try:
-#     mycursor.execute("USE {}".format(MAGIC_INVENTORY_DATABASE))
-# except mysql.connector.Error as err:
-#     print("Database {} does not exists.".format(MAGIC_INVENTORY_DATABASE))
-#     if err.errno == errorcode.ER_BAD_DB_ERROR:
-#         create_database(mycursor)
-#         print("Database {} created successfully.".format(MAGIC_INVENTORY_DATABASE))
-#         db.database = MAGIC_INVENTORY_DATABASE
-#     else:
-#         print(err)
-#         exit(1)
-#
-# for table_name in TABLES:
-#     table_description = TABLES[table_name]
-#     try:
-#         print("Creating table {}: ".format(table_name), end='')
-#         mycursor.execute(table_description)
-#     except mysql.connector.Error as err:
-#         if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-#             print("already exists.")
-#         else:
-#             print(err.msg)
-#     else:
-#         print("OK")
-# mycursor.close()
-#
-# # Will download the CSV from mtgjson to import cards that are missing
-# url = f'mysql+pymysql://{MAGIC_INVENTORY_USER}:{MAGIC_INVENTORY_PASSWORD}@{MAGIC_INVENTORY_HOST}/{MAGIC_INVENTORY_DATABASE}'
-# engine = create_engine(url)
-# print('Script has started and starting to download the file')
-#
-# downloadurl = 'https://mtgjson.com/api/v5/csv/cards.csv.zip'
-#
-# req = requests.get(downloadurl)
-#
-# filename = req.url[downloadurl.rfind('/') + 1:]
-# unzfilename = filename[:-4]
-#
-# with open(filename, 'wb') as f:
-#     for chunk in req.iter_content(chunk_size=8192):
-#         if chunk:
-#             f.write(chunk)
-#     print("File has been Downloaded")
-#
-# with zipfile.ZipFile(filename, 'r') as filename:
-#     filename.extract(unzfilename)
-#     print("File has been unzipped")
-#
-# csvdf = pd.read_csv(unzfilename, header=0, index_col=False, low_memory=False, delimiter=',')
-#
-# with engine.begin() as connection:
-#     sqldf = pd.read_sql_table('cards', con=connection)
-#     dftoinsert = pd.concat([csvdf, sqldf]).drop_duplicates(subset=['id'], keep=False)
-#     print("Reading Database to check dublicates")
-#     dftoinsert.to_sql("cards", con=connection, if_exists='append', index=False)
-#     print("Inserted Cards")
 
 
 def is_was_me_GIO(ctx):
@@ -288,6 +65,8 @@ async def main():
 ##Prints in python bot is read, and imports users information when restarts.
 @client.event
 async def on_ready():
+    await start_database()
+    await prompt_user_updatecards()
     await client.change_presence(activity=discord.Game('Ready to Pull Magic Cards'))
     for guild in client.guilds:
         async for member in guild.fetch_members(limit=None):
