@@ -12,6 +12,13 @@ MAGIC_INVENTORY_USER = os.getenv('USER')
 MAGIC_INVENTORY_PASSWORD = os.getenv('PASSWORD')
 MAGIC_INVENTORY_DATABASE = os.getenv('DATABASE')
 
+db_info={
+    "host": MAGIC_INVENTORY_HOST,
+    "user": MAGIC_INVENTORY_USER,
+    "passwd":MAGIC_INVENTORY_PASSWORD,
+    "database":MAGIC_INVENTORY_DATABASE
+}
+
 # Create tables to import users, and cards
 db = mysql.connector.connect(
     host=MAGIC_INVENTORY_HOST,

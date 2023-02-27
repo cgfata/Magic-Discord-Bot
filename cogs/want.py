@@ -1,18 +1,11 @@
 import mysql.connector
 import discord
-import os
 import time
 import re
+import os
 from discord.ext import commands
-from dotenv import load_dotenv
 from functions import wantcardsuser, cardnamechecker, cardnamecheckername
 
-load_dotenv()
-BOT_TOKEN = os.getenv('TOKEN')
-MAGIC_INVENTORY_HOST = os.getenv('HOST')
-MAGIC_INVENTORY_USER = os.getenv('USER')
-MAGIC_INVENTORY_PASSWORD = os.getenv('PASSWORD')
-MAGIC_INVENTORY_DATABASE = os.getenv('DATABASE')
 
 
 class want(commands.Cog):
@@ -31,12 +24,8 @@ class want(commands.Cog):
         elif "None" in str(await wantcardsuser(f'{card}')):
             await ctx.send('No one has the card')
         else:
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
+            from database import db_info
+            db = mysql.connector.connect(**db_info)
             mycursor = db.cursor()
             atcard = ""
             noatcard = ""
@@ -54,8 +43,8 @@ class want(commands.Cog):
                 noatcard += ("{} has {} {}\n".format(uname, count, magicname))
             await ctx.send(
                 f'<@!{ctx.author.id}> here are the users who have the card {card}:\n\n{atcard + noatcard}')
-            mycursor.close()
-            db.close()
+        mycursor.close()
+        db.close()
 
     @commands.command(brief='Wll look up a mass import of who has the cards. ')
     async def masswant(self, ctx, *, card):
@@ -84,12 +73,8 @@ class want(commands.Cog):
                     greaterthan10 += ('i.name = "{}" OR '.format(card[3:]))
                     cardwantedlist.append('{}'.format(card[3:]))
                 whereintoquery = (nonumber + greaterthan10 + lessthan10)[:-3]
-                db = mysql.connector.connect(
-                    host=MAGIC_INVENTORY_HOST,
-                    user=MAGIC_INVENTORY_USER,
-                    passwd=MAGIC_INVENTORY_PASSWORD,
-                    database=MAGIC_INVENTORY_DATABASE
-                )
+                from database import db_info
+                db = mysql.connector.connect(**db_info)
                 mycursor = db.cursor()
                 atcard = ""
                 noatcard = ""

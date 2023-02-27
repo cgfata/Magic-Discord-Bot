@@ -1,17 +1,11 @@
 import mysql.connector
-import os
+
 import zipfile
 import requests
 import pandas as pd
 import discord
-from dotenv import load_dotenv
 
-load_dotenv()
-BOT_TOKEN = os.getenv('TOKEN')
-MAGIC_INVENTORY_HOST = os.getenv('HOST')
-MAGIC_INVENTORY_USER = os.getenv('USER')
-MAGIC_INVENTORY_PASSWORD = os.getenv('PASSWORD')
-MAGIC_INVENTORY_DATABASE = os.getenv('DATABASE')
+
 
 def emojimana(ctx, text):
     mana0 = discord.utils.get(ctx.bot.emojis, name="mana0")
@@ -145,7 +139,10 @@ def emojimana(ctx, text):
     return text
 
 async def send_card_embed(ctx,query):
-    from database import db, mycursor
+    from database import db_info
+    db = mysql.connector.connect(**db_info)
+    mycursor = db.cursor()
+
     mycursor.execute(query)
     for (name, manaCost, type, text, power, toughness, scryfallId, loyalty, side) in mycursor:
         if "b" in str(side):
@@ -210,7 +207,9 @@ async def send_card_embed(ctx,query):
     db.close()
 
 async def wantcardsuser (card):
-    from database import mycursor,db
+    from database import db_info
+    db = mysql.connector.connect(**db_info)
+    mycursor = db.cursor()
 
     newwantquery = (f'SELECT i.discordid AS usid, SUM(i.count) AS count, i.name AS magicname, d.name AS uname FROM inventory i JOIN discorduser d ON i.discordid = d.discordid WHERE i.name="{card}" GROUP BY i.discordid, i.name, d.name')
     mycursor.execute(newwantquery)
@@ -220,7 +219,9 @@ async def wantcardsuser (card):
     db.close()
 
 async def cardnamechecker (card):
-    from database import mycursor, db
+    from database import db_info
+    db = mysql.connector.connect(**db_info)
+    mycursor = db.cursor()
 
     checkerquery = (f'SELECT name,uuid FROM cards WHERE name="{card}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
     checkerquerydoublefacefront = (f'SELECT name, uuid FROM cards WHERE name LIKE "{card} //%" AND side= "a" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
@@ -238,7 +239,9 @@ async def cardnamechecker (card):
     db.close()
 
 async def cardnamecheckername(card):
-    from database import mycursor, db
+    from database import db_info
+    db = mysql.connector.connect(**db_info)
+    mycursor = db.cursor()
 
     checkerquery = (
         f'SELECT name,uuid FROM cards WHERE name="{card}" AND type != "Vanguard" ORDER BY RAND() LIMIT 1')
@@ -263,7 +266,10 @@ async def cardnamecheckername(card):
 ##If no power it will leave that out in the return
 ##if both power and manacost are not there then it will not return either
 async def cardinfo (info):
-    from database import mycursor, db
+    from database import db_info
+    db = mysql.connector.connect(**db_info)
+    mycursor = db.cursor()
+
     infoquery = (f'SELECT distinct name,manaCost,type,text,power,toughness,loyalty FROM cards WHERE uuid="{info}"')
     mycursor.execute(infoquery)
     for (name, manaCost, type, text,power,toughness,loyalty) in mycursor:
