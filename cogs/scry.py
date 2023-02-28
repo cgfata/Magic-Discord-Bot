@@ -9,9 +9,9 @@ class scry(commands.Cog):
 
     #commands
     @commands.command(brief='Card info in text format')
-    async def scrytext(self, ctx, *, cardwanted):
-        cardoutputname = await cardnamechecker(f'{cardwanted}')
-        if "}" in str(f'{cardwanted}') or "{" in str(f'{cardwanted}'):
+    async def scrytext(self, ctx, *, card):
+        cardoutputname = await cardnamechecker(f'{card}')
+        if "}" in str(f'{card}') or "{" in str(f'{card}'):
             await ctx.send('Hey now. You stop that!')
         elif "None" in str(cardoutputname):
             await ctx.send('The card name is incorrect')
@@ -19,9 +19,9 @@ class scry(commands.Cog):
             await ctx.send(await cardinfo(f'{cardoutputname}'))
 
     @commands.command(brief='Card info and picture of the card')
-    async def scry(self, ctx, *, cardembed):
-        cardoutputuuid = await cardnamechecker(f'{cardembed}')
-        if "}" in str(f'{cardembed}') or "{" in str(f'{cardembed}'):
+    async def scry(self, ctx, *, card):
+        cardoutputuuid = await cardnamechecker(f'{card}')
+        if "}" in str(f'{card}') or "{" in str(f'{card}'):
             await ctx.send('Hey now. You stop that!')
         elif "None" in str(cardoutputuuid):
             await ctx.send('The card name is incorrect')

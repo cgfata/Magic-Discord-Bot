@@ -264,12 +264,12 @@ async def cardnamecheckername(card):
 ##If no Manacost it will leave that out in the return
 ##If no power it will leave that out in the return
 ##if both power and manacost are not there then it will not return either
-async def cardinfo (info):
+async def cardinfo (card):
     from database import db_info
     db = mysql.connector.connect(**db_info)
     mycursor = db.cursor()
 
-    infoquery = (f'SELECT distinct name,manaCost,type,text,power,toughness,loyalty FROM cards WHERE uuid="{info}"')
+    infoquery = (f'SELECT distinct name,manaCost,type,text,power,toughness,loyalty FROM cards WHERE uuid="{card}"')
     mycursor.execute(infoquery)
     for (name, manaCost, type, text,power,toughness,loyalty) in mycursor:
         if "None" in str(loyalty):
