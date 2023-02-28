@@ -1,5 +1,4 @@
 import mysql.connector
-
 import zipfile
 import requests
 import pandas as pd

@@ -4,21 +4,6 @@ import os
 from discord.ext import commands
 from dotenv import load_dotenv
 
-load_dotenv()
-BOT_TOKEN = os.getenv('TOKEN')
-MAGIC_INVENTORY_HOST = os.getenv('HOST')
-MAGIC_INVENTORY_USER = os.getenv('USER')
-MAGIC_INVENTORY_PASSWORD = os.getenv('PASSWORD')
-MAGIC_INVENTORY_DATABASE = os.getenv('DATABASE')
-
-db = mysql.connector.connect(
-        host=MAGIC_INVENTORY_HOST,
-        user=MAGIC_INVENTORY_USER,
-        passwd=MAGIC_INVENTORY_PASSWORD,
-        database=MAGIC_INVENTORY_DATABASE
-    )
-mycursor = db.cursor()
-
 class events(commands.Cog):
 
     def __init__(self,client):
@@ -27,12 +12,8 @@ class events(commands.Cog):
     ## The events below will update the database when a user joins and if they leave set active to 0
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        db = mysql.connector.connect(
-            host=MAGIC_INVENTORY_HOST,
-            user=MAGIC_INVENTORY_USER,
-            passwd=MAGIC_INVENTORY_PASSWORD,
-            database=MAGIC_INVENTORY_DATABASE
-        )
+        from database import db_info
+        db = mysql.connector.connect(**db_info)
         mycursor = db.cursor()
         authname = str(member)
         authorid = str(member.id)
@@ -59,12 +40,8 @@ class events(commands.Cog):
     ##event that when a user changers their discord name it will update the database
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        db = mysql.connector.connect(
-            host=MAGIC_INVENTORY_HOST,
-            user=MAGIC_INVENTORY_USER,
-            passwd=MAGIC_INVENTORY_PASSWORD,
-            database=MAGIC_INVENTORY_DATABASE
-        )
+        from database import db_info
+        db = mysql.connector.connect(**db_info)
         mycursor = db.cursor()
         beforeusername = str(before.name)
         afterusernanme = str(after.name)
@@ -82,12 +59,8 @@ class events(commands.Cog):
     ##event where when a member leaves the server it sets them to inactive which will stop the system from sending out thier card inventory
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        db = mysql.connector.connect(
-            host=MAGIC_INVENTORY_HOST,
-            user=MAGIC_INVENTORY_USER,
-            passwd=MAGIC_INVENTORY_PASSWORD,
-            database=MAGIC_INVENTORY_DATABASE
-        )
+        from database import db_info
+        db = mysql.connector.connect(**db_info)
         mycursor = db.cursor()
         authorid = str(member.id)
         authserverid = str(member.guild.id)
@@ -111,12 +84,8 @@ class events(commands.Cog):
             serverinfo = (
                 f'INSERT INTO discordserver (discordid, serverid, active) SELECT * FROM (SELECT {member.id} AS discordid, {member.guild.id} AS serverid, 1 AS active ) AS TEMP WHERE NOT EXISTS ( SELECT discordid, serverid FROM discordserver WHERE discordid = {member.id} AND serverid = {member.guild.id}) limit 1;')
             formemberquery = discordmembers[:-1]
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
+            from database import db_info
+            db = mysql.connector.connect(**db_info)
             mycursor = db.cursor()
             mycursor.execute(f'INSERT IGNORE INTO discorduser (name,discordid) VALUES {formemberquery}')
             db.commit()

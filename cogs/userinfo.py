@@ -22,12 +22,8 @@ class userinfo(commands.Cog):
     # commands
     @commands.command(brief='Will update your discord ID and Discord Name')
     async def userupdate(self, ctx):
-        db = mysql.connector.connect(
-            host=MAGIC_INVENTORY_HOST,
-            user=MAGIC_INVENTORY_USER,
-            passwd=MAGIC_INVENTORY_PASSWORD,
-            database=MAGIC_INVENTORY_DATABASE
-        )
+        from database import db_info
+        db = mysql.connector.connect(**db_info)
         mycursor = db.cursor()
         authorid = str(ctx.author.id)
         authname = str(ctx.author)
@@ -54,24 +50,16 @@ class userinfo(commands.Cog):
         if "}" in str(at) or "{" in str(at):
             await ctx.send("Hey stop that!")
         elif "on" in str.lower(at):
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
+            from database import db_info
+            db = mysql.connector.connect(**db_info)
             mycursor = db.cursor()
             mycursor.execute(
                 f'Update discordserver set at=1 WHERE discordid = {ctx.author.id} AND serverid = {ctx.guild.id}')
             db.commit()
             await ctx.send('You will now be @ when people are looking for cards')
         elif "off" in str.lower(at):
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
+            from database import db_info
+            db = mysql.connector.connect(**db_info)
             mycursor = db.cursor()
             mycursor.execute(
                 f'Update discordserver set at=0 WHERE discordid = {ctx.author.id} AND serverid = {ctx.guild.id}')

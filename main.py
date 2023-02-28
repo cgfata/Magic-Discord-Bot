@@ -12,21 +12,6 @@ client = commands.Bot(command_prefix='$', intents=intents)
 
 load_dotenv()
 BOT_TOKEN = os.getenv('TOKEN')
-MAGIC_INVENTORY_HOST = os.getenv('HOST')
-MAGIC_INVENTORY_USER = os.getenv('USER')
-MAGIC_INVENTORY_PASSWORD = os.getenv('PASSWORD')
-MAGIC_INVENTORY_DATABASE = os.getenv('DATABASE')
-
-# Create tables to import users, and cards
-db = mysql.connector.connect(
-    host=MAGIC_INVENTORY_HOST,
-    user=MAGIC_INVENTORY_USER,
-    passwd=MAGIC_INVENTORY_PASSWORD,
-    database=MAGIC_INVENTORY_DATABASE
-)
-
-mycursor = db.cursor()
-
 
 def is_was_me_GIO(ctx):
     return ctx.author.id == 78717168631427072
@@ -70,16 +55,12 @@ async def on_ready():
     await client.change_presence(activity=discord.Game('Ready to Pull Magic Cards'))
     for guild in client.guilds:
         async for member in guild.fetch_members(limit=None):
+            from database import db_info
+            db = mysql.connector.connect(**db_info)
+            mycursor = db.cursor()
             discordmembers = ('("{}","{}"),'.format(member, member.id))
             serverinfo = (f'INSERT INTO discordserver (discordid, serverid, active) SELECT * FROM (SELECT {member.id} AS discordid, {member.guild.id} AS serverid, 1 AS active ) AS TEMP WHERE NOT EXISTS ( SELECT discordid, serverid FROM discordserver WHERE discordid = {member.id} AND serverid = {member.guild.id}) limit 1;')
             formemberquery = discordmembers[:-1]
-            db = mysql.connector.connect(
-                host=MAGIC_INVENTORY_HOST,
-                user=MAGIC_INVENTORY_USER,
-                passwd=MAGIC_INVENTORY_PASSWORD,
-                database=MAGIC_INVENTORY_DATABASE
-            )
-            mycursor = db.cursor()
             mycursor.execute(f'INSERT IGNORE INTO discorduser (name,discordid) VALUES {formemberquery}')
             db.commit()
             mycursor.execute(serverinfo)
